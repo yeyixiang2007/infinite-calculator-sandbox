@@ -19,6 +19,7 @@ else:
     def kbhit():
         if _key_buffer:
             return True
+        # Use 0 timeout for immediate check
         return select.select([sys.stdin], [], [], 0)[0] == [sys.stdin]
 
     def getch():
@@ -28,7 +29,7 @@ else:
 
         fd = sys.stdin.fileno()
         # Non-blocking read check
-        if not select.select([sys.stdin], [], [], 0.05)[0]:
+        if not select.select([sys.stdin], [], [], 0)[0]:
             return b''
 
         # We already disabled echo and canonical mode in main.py,
@@ -39,9 +40,9 @@ else:
         if ch == '\x1b':
             # Escape sequence started
             seq = ""
-            # Try to read up to 3 more characters of the sequence
+            # Try to read up to 3 more characters of the sequence with minimal delay
             for _ in range(3):
-                if select.select([sys.stdin], [], [], 0.05)[0]:
+                if select.select([sys.stdin], [], [], 0.01)[0]:
                     c = sys.stdin.read(1)
                     seq += c
                     # Common endings for arrow keys

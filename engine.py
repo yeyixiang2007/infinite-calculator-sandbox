@@ -717,10 +717,22 @@ class GameEngine:
         return layout
 
     def run(self):
-        with Live(self.render(), refresh_per_second=20, screen=True) as live:
+        # High refresh rate for UI and input responsiveness
+        with Live(self.render(), refresh_per_second=30, screen=True) as live:
+            last_tick = time.time()
             while self.running:
-                self.handle_input()
-                if self.state == "GAME":
-                    self.update()
+                # 1. Handle all pending input immediately
+                while input_h.kbhit():
+                    self.handle_input()
+
+                # 2. Update game logic at a fixed 20Hz (0.05s) interval to maintain speed
+                current_time = time.time()
+                if current_time - last_tick >= 0.05:
+                    if self.state == "GAME":
+                        self.update()
+                    last_tick = current_time
+
+                # 3. Smoothly update UI
                 live.update(self.render())
-                time.sleep(0.05)
+                # Minimal sleep to prevent 100% CPU usage but keep response high
+                time.sleep(0.005)
