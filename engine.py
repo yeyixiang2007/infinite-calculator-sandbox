@@ -1,7 +1,7 @@
 import os
 import sys
 import time
-import msvcrt
+import input_handler as input_h
 import random
 from rich.console import Console
 from rich.layout import Layout
@@ -81,12 +81,12 @@ class GameEngine:
                 break
 
     def handle_input(self):
-        if msvcrt.kbhit():
-            key = msvcrt.getch()
+        if input_h.kbhit():
+            key = input_h.getch()
             try:
                 # Handle arrow keys (prefix 0x00 or 0xE0)
                 if key in [b'\x00', b'\xe0']:
-                    key = msvcrt.getch() # Read the second byte
+                    key = input_h.getch() # Read the second byte
                     if key == b'H': key = 'w'
                     elif key == b'P': key = 's'
                     elif key == b'K': key = 'a'
