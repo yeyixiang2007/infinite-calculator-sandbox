@@ -17,7 +17,7 @@
 
 | 按键 | 功能 |
 | :--- | :--- |
-| **W/A/S/D** | 移动 / 菜单导航 |
+| **W/A/S/D** | 移动 / 菜单导航 / 方向键适配 |
 | **Space** | 攻击 (消耗体力) |
 | **E** | **AC (All Clear)** 终极技能 (清屏) |
 | **P** | 暂停 / 恢复 |
@@ -25,18 +25,17 @@
 
 ## 🛠️ 安装与运行
 
+### Windows
+
 1. 确保已安装 Python 3.8+。
-2. 安装依赖库：
+2. 安装依赖库：`pip install rich`
+3. 启动游戏：`python main.py` 或运行 `run_game.bat`
 
-   ```bash
-   pip install rich
-   ```
+### Linux / Termux
 
-3. 启动游戏：
-
-   ```bash
-   python main.py
-   ```
+1. 确保已安装 Python 3.8+。
+2. 为启动脚本添加执行权限：`chmod +x run_game.sh`
+3. 运行：`./run_game.sh` (脚本会自动检测并尝试安装 `rich` 库)
 
 ## 📜 开发者备注
 

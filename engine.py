@@ -24,8 +24,19 @@ class Effect:
 class GameEngine:
     def __init__(self):
         self.console = Console()
+        # Initial viewport size
         self.viewport_width = 40
         self.viewport_height = 20
+
+        # Try to detect terminal size and adjust viewport if necessary
+        try:
+            term_w, term_h = os.get_terminal_size()
+            # Leave some space for status bars and borders
+            self.viewport_width = min(40, term_w - 4)
+            self.viewport_height = min(20, term_h - 10)
+        except (AttributeError, OSError):
+            pass
+
         self.running = True
         self.state = "MENU" # MENU, GAME, GAME_OVER, HELP, PAUSED, DIFFICULTY_SELECT, MODE_SELECT, LEVEL_UP
         self.difficulty = "NORMAL" # EASY, NORMAL, HARD

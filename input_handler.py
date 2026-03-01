@@ -25,6 +25,7 @@ else:
     import termios
     import tty
     import select
+    import time
 
     _old_settings = None
 
@@ -34,7 +35,8 @@ else:
         try:
             fd = sys.stdin.fileno()
             _old_settings = termios.tcgetattr(fd)
-            tty.setraw(fd)
+            # Use cbreak mode instead of raw for slightly better behavior on some shells
+            tty.setcbreak(fd)
         except Exception:
             pass
 
@@ -63,58 +65,49 @@ else:
         fd = sys.stdin.fileno()
 
         try:
-            # Read 1 byte directly from file descriptor to bypass Python buffering
-            # This is blocking if no data, but usually called after kbhit()
-            # or we want it to block if we are waiting for input.
-            # However, for the game loop, we rely on kbhit.
-            # If kbhit is false, engine loop continues.
-            # If kbhit is true, we read.
-
-            # Using os.read instead of sys.stdin.read for raw mode reliability
+            # Read 1 byte
             b = os.read(fd, 1)
             if not b:
                 return b''
 
-            ch = b.decode('latin-1') # Decode raw byte
+            # ESC sequence
+            if b == b'\x1b':
+                # Check if there's more data (timeout 0.1s)
+                r, _, _ = select.select([sys.stdin], [], [], 0.1)
+                if not r:
+                    return b'\x1b' # Just ESC key
 
-            if ch == '\x1b':
-                # Escape sequence started
+                # Read the rest of the sequence
                 seq = ""
-                # Try to read rest of sequence with a short timeout
-                import time
-                start = time.time()
-                while time.time() - start < 0.05:
-                    r, _, _ = select.select([sys.stdin], [], [], 0)
+                while True:
+                    r, _, _ = select.select([sys.stdin], [], [], 0.01)
                     if r:
                         b_next = os.read(fd, 1)
-                        if b_next:
-                            c = b_next.decode('latin-1')
-                            seq += c
-                            # Common sequence terminators
-                            if c.isalpha() or c == '~':
-                                break
+                        if not b_next: break
+                        c = b_next.decode('latin-1')
+                        seq += c
+                        # End of sequence markers
+                        if c.isalpha() or c == '~':
+                            break
                     else:
-                        # If we have a partial sequence like '[', wait a bit more?
-                        # But 0.05s is plenty for local terminal.
-                        pass
+                        break
 
-                # Parse sequence
-                # Arrow keys: ^[[A, ^[OA, ^[A
-                if seq.endswith('A'): # Up
+                # Map ANSI escape sequences to Windows-style msvcrt bytes
+                # Arrow keys
+                if seq == '[A' or seq == 'OA': # Up
                     _key_buffer.append(b'H')
                     return b'\xe0'
-                elif seq.endswith('B'): # Down
+                elif seq == '[B' or seq == 'OB': # Down
                     _key_buffer.append(b'P')
                     return b'\xe0'
-                elif seq.endswith('C'): # Right
+                elif seq == '[C' or seq == 'OC': # Right
                     _key_buffer.append(b'M')
                     return b'\xe0'
-                elif seq.endswith('D'): # Left
+                elif seq == '[D' or seq == 'OD': # Left
                     _key_buffer.append(b'K')
                     return b'\xe0'
 
-                # Unhandled sequence or just ESC
-                return b'\x1b'
+                return b'\x1b' # Unrecognized sequence
 
             return b
         except Exception:
